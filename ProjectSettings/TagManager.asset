@@ -5,6 +5,7 @@ TagManager:
   serializedVersion: 2
   tags:
   - chao
+  - objeto
   layers:
   - Default
   - TransparentFX

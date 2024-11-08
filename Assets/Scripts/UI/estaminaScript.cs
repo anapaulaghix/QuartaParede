@@ -31,7 +31,7 @@ public class estaminaScript : MonoBehaviour
 
         if (jogadorObj != null && EstaminaVerde != null && EstaminaVermelha != null)
         {
-            if(jogadorScript.dentroParede)
+            if(jogadorScript.modoFantasma)
             {
                 EstaminaVermelha.fillAmount = (jogadorScript.estaminaAtual / jogadorScript.estaminaMax + 0.07f);
             }

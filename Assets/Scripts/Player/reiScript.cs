@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class reiScript : MonoBehaviour
 {
@@ -17,11 +16,14 @@ public class reiScript : MonoBehaviour
     public float estaminaAtual;
     public float drenoEstamina = 20f;
     public bool dentroParede = false;
+    public bool modoFantasma = false;
 
     public Collider2D jogadorCollider;
 
     private bool aterrado = false;
-    private Vector3 sentido = Vector3.left;
+
+    private Collider2D paredeAtual;
+    
 
     void Start()
     {
@@ -30,13 +32,27 @@ public class reiScript : MonoBehaviour
 
     void Update()
     {
+        // Verifica se a barra de espaço está pressionada
+        modoFantasma = Input.GetKey(KeyCode.Space) && estaminaAtual > 0;
+        
+        if(dentroParede && !modoFantasma)
+        {
+            expulsarParede();
+        }
+
         // Movimentação Horizontal
         if (Input.GetKey(KeyCode.A))
+        {
             velX -= acel * Time.deltaTime;
+        }
         else if (Input.GetKey(KeyCode.D))
+        {
             velX += acel * Time.deltaTime;
+        }
         else
+        {
             velX = Mathf.Lerp(velX, 0, 5 * Time.deltaTime);
+        }
 
         velX = Mathf.Clamp(velX, -velMax, velMax);
 
@@ -53,17 +69,20 @@ public class reiScript : MonoBehaviour
         // Atualiza a posição do jogador
         transform.position += new Vector3(velX, velY, 0) * Time.deltaTime;
 
-        // Consumo de estamina dentro da parede
-        if (dentroParede)
+        // Consumo de estamina no modo fantasma
+        if (modoFantasma)
         {
             estaminaAtual -= drenoEstamina * Time.deltaTime;
 
-
-            if (estaminaAtual <= 0)
+            if (estaminaAtual <= 0 && dentroParede)
+            {
                 expulsarParede();
+                modoFantasma = false;
+            }
         }
         else
         {
+            // Regenera a estamina quando fora do modo fantasma
             estaminaAtual = Mathf.Min(estaminaAtual + drenoEstamina * Time.deltaTime, estaminaMax);
         }
     }
@@ -87,9 +106,10 @@ public class reiScript : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.CompareTag("objeto"))
+        if (collision.CompareTag("objeto") && modoFantasma)
         {
             dentroParede = true;
+            paredeAtual = collision;
             Physics2D.IgnoreCollision(collision, jogadorCollider, true);
         }
     }
@@ -99,14 +119,28 @@ public class reiScript : MonoBehaviour
         if (collision.CompareTag("objeto"))
         {
             dentroParede = false;
+            paredeAtual = null;
             Physics2D.IgnoreCollision(collision, jogadorCollider, false);
         }
     }
 
     private void expulsarParede()
     {
-        transform.position += sentido * 0.5f;
-        estaminaAtual = 0;
+        if (paredeAtual != null)
+    {
+        // Calcula a direção horizontal para fora da parede
+        Vector3 direcao = (transform.position.x - paredeAtual.bounds.center.x) >= 0 ? Vector3.right : Vector3.left;
+
+        // Calcula a distância na horizontal com base na largura do colisor da parede e do jogador
+        float distanciaX = paredeAtual.bounds.extents.x + jogadorCollider.bounds.extents.x;
+
+        // Define a nova posição do jogador fora da parede, apenas na direção horizontal
+        transform.position = new Vector3(
+            paredeAtual.bounds.center.x + direcao.x * (distanciaX + 0.5f),
+            transform.position.y,
+            transform.position.z
+        );
+    }
         dentroParede = false;
     }
 }
